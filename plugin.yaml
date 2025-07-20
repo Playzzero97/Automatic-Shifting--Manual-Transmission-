@@ -1,0 +1,9 @@
+name: "Automatic Shifting (Manual Transmission)"
+overview: "This plugin will automatically shift whilst having a manual transmission, please note that this does not have an eco mode."
+description: |
+ Please note that this is a bit buggy but is better than nothing.
+
+ Use Automatic Gearbox for the best experience. AND DISABLE THIS PLUGIN IF YOU DO USE AN AUTOMATIC GEARBOX
+image_url: ""
+version: "1.0.0"
+author: "Playzzero97"
