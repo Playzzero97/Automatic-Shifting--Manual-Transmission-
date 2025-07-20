@@ -3,7 +3,9 @@ overview: "This plugin will automatically shift whilst having a manual transmiss
 description: |
  Please note that this is a bit buggy but is better than nothing.
 
- Use Automatic Gearbox for the best experience. AND DISABLE THIS PLUGIN IF YOU DO USE AN AUTOMATIC GEARBOX
+ Use Automatic Gearbox for the best experience. **AND DISABLE THIS PLUGIN IF YOU DO USE AN AUTOMATIC GEARBOX**
+
+ **This plugin does not work with the H-Shifter option.**
 image_url: ""
 version: "1.0.0"
 author: "Playzzero97"
