@@ -9,9 +9,9 @@ import math
 class Plugin(ETS2LAPlugin):
     
     description = PluginDescription(
-        name="Automatic Shifting (Manual Transmission)",
-        version="1.0.0",
-        description="This plugin will automatically shift whilst having a manual transmission, please note that this does not have an eco mode.",
+        name="Automatic Shifting (Sequential Transmission)",
+        version="1.0.1",
+        description="This plugin will automatically shift whilst having a sequential transmission, please note that this does not have an eco mode.",
         modules=["Traffic", "TruckSimAPI", "SDKController"],
         listen=["*.py"],
         tags=["Base"],

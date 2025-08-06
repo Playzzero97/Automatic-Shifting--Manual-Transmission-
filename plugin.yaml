@@ -1,5 +1,5 @@
-name: "Automatic Shifting (Manual Transmission)"
-overview: "This plugin will automatically shift whilst having a manual transmission, please note that this does not have an eco mode."
+name: "Automatic Shifting (Sequential Transmission)"
+overview: "This plugin will automatically shift whilst having a sequential transmission, please note that this does not have an eco mode."
 description: |
  Please note that this is a bit buggy but is better than nothing.
 
@@ -7,5 +7,5 @@ description: |
 
  **This plugin does not work with the H-Shifter option.**
 image_url: ""
-version: "1.0.0"
+version: "1.0.1"
 author: "Playzzero97"
