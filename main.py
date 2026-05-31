@@ -1,12 +1,8 @@
-# Framework
 from ETS2LA.Events import *
 from ETS2LA.Plugin import *
-from ETS2LA.Events import events
 from ETS2LA.UI import ETS2LAPage, ETS2LAPageLocation, TitleAndDescription, ComboboxWithTitleDescription
-import Plugins.Map.data as mapdata
 
 import json
-import math
 import os
 import time
 
@@ -44,7 +40,7 @@ class Plugin(ETS2LAPlugin):
     
     description = PluginDescription(
         name="Automatic Shifting (Sequential Transmission)",
-        version="1.0.2",
+        version="1.0.3",
         description="This plugin will automatically shift whilst having a sequential transmission and supports Eco, Normal, and Power shift modes.",
         modules=["Traffic", "TruckSimAPI", "SDKController"],
         listen=["*.py"],
@@ -69,6 +65,8 @@ class Plugin(ETS2LAPlugin):
         self.shift_duration = 1
         self.shift_cooldown = 0.35
         self.last_shift_time = 0.0
+        self.last_known_gear = 1
+        self.pending_shifts = 0
         self.shift_modes = {
             "Eco": {"up": 0.5, "down": 0.3},
             "Normal": {"up": 0.70, "down": 0.58},
@@ -120,19 +118,8 @@ class Plugin(ETS2LAPlugin):
         )
         return upshift, downshift
 
-    def should_upshift(
-        self,
-        rpm: float,
-        speed: float,
-        gear: int,
-        max_gear: int,
-        throttle: float,
-        braking: float,
-        upshift_rpm: float,
-    ) -> bool:
+    def should_upshift(self, rpm: float, speed: float, gear: int, max_gear: int, throttle: float, braking: float, upshift_rpm: float) -> bool:
         if gear >= max_gear:
-            return False
-        if braking > 0.2:
             return False
         if rpm <= upshift_rpm:
             return False
@@ -140,23 +127,16 @@ class Plugin(ETS2LAPlugin):
             return False
         return True
 
-    def should_downshift(
-        self,
-        rpm: float,
-        speed: float,
-        gear: int,
-        min_drive_gear: int,
-        throttle: float,
-        braking: float,
-        downshift_rpm: float,
-    ) -> bool:
-        if gear <= min_drive_gear:
+    def should_downshift(self, rpm: float, speed: float, gear: int, min_drive_gear: int, throttle: float, braking: float, downshift_rpm: float) -> bool:
+        if gear <= 1: 
             return False
-        if braking > 0.15:
+        if braking > 0.4:
             return True
+        if speed < 2.0:       
+            return False
         if rpm > downshift_rpm:
             return False
-        if speed < gear * 1.4 and throttle < 0.25:
+        if speed < gear * 0.4 and throttle < 0.15:
             return True
         return False
 
@@ -168,7 +148,6 @@ class Plugin(ETS2LAPlugin):
         speed = data['truckFloat']['speed']
 
         max_gear = data['configUI']['gears']
-        min_drive_gear = 1
         max_rpm = data['configFloat'].get('engineRpmMax', 0.0)
         mode = self.read_mode_from_settings()
         upshift_rpm, downshift_rpm = self.get_thresholds(max_rpm, mode)
@@ -182,29 +161,24 @@ class Plugin(ETS2LAPlugin):
             data['truckFloat'].get('userBrake', 0.0),
         )
 
+        if current_gear > 0 and current_gear != self.last_known_gear:
+                self.last_known_gear = current_gear
+                self.pending_shifts = 0
+        elif current_gear > 0:
+            self.last_known_gear = current_gear
+
+        effective_gear = self.last_known_gear
+
         if current_gear != 0 and speed > 1.0 and time.time() - self.last_shift_time >= self.shift_cooldown:
-            if self.should_upshift(
-                current_rpm,
-                speed,
-                current_gear,
-                max_gear,
-                throttle,
-                braking,
-                upshift_rpm,
-            ):
+            if self.should_upshift(current_rpm, speed, effective_gear, max_gear, throttle, braking, upshift_rpm):
                 self.shift_state["gearup"] = self.shift_duration
+                self.pending_shifts = max(0, self.pending_shifts - 1)
                 self.last_shift_time = time.time()
-            elif self.should_downshift(
-                current_rpm,
-                speed,
-                current_gear,
-                min_drive_gear,
-                throttle,
-                braking,
-                downshift_rpm,
-            ):
-                self.shift_state["geardown"] = self.shift_duration
-                self.last_shift_time = time.time()
+            elif self.should_downshift(current_rpm, speed, effective_gear, 1, throttle, braking, downshift_rpm):
+                if effective_gear - self.pending_shifts > 1:
+                    self.shift_state["geardown"] = self.shift_duration
+                    self.pending_shifts += 1
+                    self.last_shift_time = time.time()
 
         self.controller.gearup = self.shift_state["gearup"] > 0
         self.controller.geardown = self.shift_state["geardown"] > 0
